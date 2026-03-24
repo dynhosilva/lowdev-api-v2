@@ -3,11 +3,25 @@ import { listRepos, listFiles, getFile, aiEditFile } from "../controllers/projec
 
 const router = express.Router();
 
+// 🔥 LISTAR REPOSITÓRIOS
 router.get("/projects", listRepos);
-router.get("/projects/:owner/:repo/files", listFiles);
-router.get("/projects/:owner/:repo/file", getFile);
 
-// 🔥 ESSA LINHA QUE FALTAVA
-router.post("/projects/:owner/:repo/ai-edit", aiEditFile);
+// 🔥 LISTAR ARQUIVOS (SEM OWNER)
+router.get("/projects/:repo/files", (req, res) => {
+  req.params.owner = "dynhosilva"; // 👈 seu usuário GitHub
+  listFiles(req, res);
+});
+
+// 🔥 PEGAR UM ARQUIVO
+router.get("/projects/:repo/file", (req, res) => {
+  req.params.owner = "dynhosilva";
+  getFile(req, res);
+});
+
+// 🔥 IA EDITAR ARQUIVO
+router.post("/projects/:repo/ai-edit", (req, res) => {
+  req.params.owner = "dynhosilva";
+  aiEditFile(req, res);
+});
 
 export default router;
