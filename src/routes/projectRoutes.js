@@ -6,19 +6,22 @@ const router = express.Router();
 // 🔥 LISTAR REPOSITÓRIOS
 router.get("/projects", listRepos);
 
-// 🔥 LISTAR ARQUIVOS (SEM OWNER)
+// 🔥 ROTAS COMPATÍVEIS COM LOVABLE (COM OWNER)
+router.get("/projects/:owner/:repo/files", listFiles);
+router.get("/projects/:owner/:repo/file", getFile);
+router.post("/projects/:owner/:repo/ai-edit", aiEditFile);
+
+// 🔥 ROTAS SIMPLES (SEM OWNER)
 router.get("/projects/:repo/files", (req, res) => {
-  req.params.owner = "dynhosilva"; // 👈 seu usuário GitHub
+  req.params.owner = "dynhosilva";
   listFiles(req, res);
 });
 
-// 🔥 PEGAR UM ARQUIVO
 router.get("/projects/:repo/file", (req, res) => {
   req.params.owner = "dynhosilva";
   getFile(req, res);
 });
 
-// 🔥 IA EDITAR ARQUIVO
 router.post("/projects/:repo/ai-edit", (req, res) => {
   req.params.owner = "dynhosilva";
   aiEditFile(req, res);
