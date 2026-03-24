@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getRepos, getRepoFiles, getFileContent, updateFile } from "../services/githubService.js";
+import { getRepos, getFileContent, updateFile } from "../services/githubService.js";
 import { generateCode } from "../services/aiService.js";
 
 const DEFAULT_TOKEN = process.env.GITHUB_TOKEN;
@@ -27,12 +27,10 @@ export const listRepos = async (req, res) => {
   }
 };
 
-// 🔥 LISTAR ARQUIVOS (CORRIGIDO PRO LOVABLE)
+// 🔥 LISTAR ARQUIVOS (VERSÃO FINAL CORRETA)
 export const listFiles = async (req, res) => {
   try {
     const token = req.headers.token || DEFAULT_TOKEN;
-
-    // 🔥 owner fixo (resolve problema do lovable)
     const owner = "dynhosilva";
     const repo = req.params.repo;
 
@@ -49,10 +47,11 @@ export const listFiles = async (req, res) => {
       }
     );
 
-    // 🔥 SIMPLIFICADO (ESSENCIAL PRO LOVABLE)
+    // 🔥 FORMATO IDEAL PRO LOVABLE
     const files = response.data.map((item) => ({
       name: item.name,
       path: item.path,
+      type: item.type, // ajuda diferenciar pasta/arquivo
     }));
 
     res.json(files);
@@ -71,7 +70,6 @@ export const listFiles = async (req, res) => {
 export const getFile = async (req, res) => {
   try {
     const token = req.headers.token || DEFAULT_TOKEN;
-
     const owner = "dynhosilva";
     const repo = req.params.repo;
     const { path } = req.query;
@@ -102,7 +100,6 @@ export const getFile = async (req, res) => {
 export const aiEditFile = async (req, res) => {
   try {
     const token = req.headers.token || DEFAULT_TOKEN;
-
     const owner = "dynhosilva";
     const repo = req.params.repo;
     const { path, prompt } = req.body;
@@ -126,10 +123,10 @@ export const aiEditFile = async (req, res) => {
     const currentContent = Buffer.from(fileResponse.data.content, "base64").toString("utf-8");
     const sha = fileResponse.data.sha;
 
-    // 🔥 IA modifica código
+    // 🔥 IA gera novo código
     const newCode = await generateCode(prompt, currentContent);
 
-    // 🔥 atualizar no GitHub
+    // 🔥 commit no GitHub
     const result = await updateFile(token, owner, repo, path, newCode, sha);
 
     res.json({
