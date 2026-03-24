@@ -27,7 +27,7 @@ export const listRepos = async (req, res) => {
   }
 };
 
-// 🔥 LISTAR ARQUIVOS (VERSÃO FINAL CORRETA)
+// 🔥 LISTAR ARQUIVOS (AGORA COMPLETO E RECURSIVO)
 export const listFiles = async (req, res) => {
   try {
     const token = req.headers.token || DEFAULT_TOKEN;
@@ -38,23 +38,40 @@ export const listFiles = async (req, res) => {
       return res.status(400).json({ error: "Token não enviado" });
     }
 
-    const response = await axios.get(
-      `https://api.github.com/repos/${owner}/${repo}/contents`,
-      {
-        headers: {
-          Authorization: `token ${token}`,
-        },
+    // 🔥 função recursiva
+    const getAllFiles = async (path = "") => {
+      const response = await axios.get(
+        `https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
+        {
+          headers: {
+            Authorization: `token ${token}`,
+          },
+        }
+      );
+
+      let files = [];
+
+      for (const item of response.data) {
+        if (item.type === "file") {
+          files.push({
+            name: item.name,
+            path: item.path,
+          });
+        }
+
+        if (item.type === "dir") {
+          const nestedFiles = await getAllFiles(item.path);
+          files = files.concat(nestedFiles);
+        }
       }
-    );
 
-    // 🔥 FORMATO IDEAL PRO LOVABLE
-    const files = response.data.map((item) => ({
-      name: item.name,
-      path: item.path,
-      type: item.type, // ajuda diferenciar pasta/arquivo
-    }));
+      return files;
+    };
 
-    res.json(files);
+    const allFiles = await getAllFiles();
+
+    res.json(allFiles);
+
   } catch (error) {
     console.log("🔥 ERRO FILES:");
     console.log(error.response?.data || error.message);
