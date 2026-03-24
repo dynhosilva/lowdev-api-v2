@@ -2,7 +2,7 @@ import axios from "axios";
 import { getRepos, getRepoFiles, getFileContent, updateFile } from "../services/githubService.js";
 import { generateCode } from "../services/aiService.js";
 
-const DEFAULT_TOKEN = process.env.GITHUB_TOKEN; // 🔥 coloca seu token aqui pra teste
+const DEFAULT_TOKEN = process.env.GITHUB_TOKEN;
 
 // 🔥 LISTAR REPOSITÓRIOS
 export const listRepos = async (req, res) => {
@@ -27,17 +27,33 @@ export const listRepos = async (req, res) => {
   }
 };
 
-// 🔥 LISTAR ARQUIVOS
+// 🔥 LISTAR ARQUIVOS (CORRIGIDO PRO LOVABLE)
 export const listFiles = async (req, res) => {
   try {
     const token = req.headers.token || DEFAULT_TOKEN;
-    const { owner, repo } = req.params;
+
+    // 🔥 owner fixo (resolve problema do lovable)
+    const owner = "dynhosilva";
+    const repo = req.params.repo;
 
     if (!token) {
       return res.status(400).json({ error: "Token não enviado" });
     }
 
-    const files = await getRepoFiles(token, owner, repo);
+    const response = await axios.get(
+      `https://api.github.com/repos/${owner}/${repo}/contents`,
+      {
+        headers: {
+          Authorization: `token ${token}`,
+        },
+      }
+    );
+
+    // 🔥 SIMPLIFICADO (ESSENCIAL PRO LOVABLE)
+    const files = response.data.map((item) => ({
+      name: item.name,
+      path: item.path,
+    }));
 
     res.json(files);
   } catch (error) {
@@ -55,7 +71,9 @@ export const listFiles = async (req, res) => {
 export const getFile = async (req, res) => {
   try {
     const token = req.headers.token || DEFAULT_TOKEN;
-    const { owner, repo } = req.params;
+
+    const owner = "dynhosilva";
+    const repo = req.params.repo;
     const { path } = req.query;
 
     if (!token) {
@@ -84,7 +102,9 @@ export const getFile = async (req, res) => {
 export const aiEditFile = async (req, res) => {
   try {
     const token = req.headers.token || DEFAULT_TOKEN;
-    const { owner, repo } = req.params;
+
+    const owner = "dynhosilva";
+    const repo = req.params.repo;
     const { path, prompt } = req.body;
 
     if (!token) {
@@ -95,7 +115,7 @@ export const aiEditFile = async (req, res) => {
       return res.status(400).json({ error: "Path ou prompt não enviado" });
     }
 
-    // 🔥 pegar arquivo atual + sha
+    // 🔥 pegar conteúdo atual
     const fileResponse = await axios.get(
       `https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
       {
@@ -109,7 +129,7 @@ export const aiEditFile = async (req, res) => {
     // 🔥 IA modifica código
     const newCode = await generateCode(prompt, currentContent);
 
-    // 🔥 salvar no GitHub
+    // 🔥 atualizar no GitHub
     const result = await updateFile(token, owner, repo, path, newCode, sha);
 
     res.json({
